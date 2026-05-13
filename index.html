@@ -609,21 +609,28 @@ function mousePressed() {
   handlePress(mouseX, mouseY);
 }
 
-let _tapStartX = 0, _tapStartY = 0;
+let _tapStartX = 0, _tapStartY = 0, _tapLastX = 0, _tapLastY = 0;
 
 function touchStarted() {
   if (touches.length > 0) {
-    _tapStartX = touches[0].x;
-    _tapStartY = touches[0].y;
+    _tapStartX = _tapLastX = touches[0].x;
+    _tapStartY = _tapLastY = touches[0].y;
   }
   return true; // allow default scroll behavior
 }
 
+function touchMoved() {
+  if (touches.length > 0) {
+    _tapLastX = touches[0].x;
+    _tapLastY = touches[0].y;
+  }
+  return true; // allow scroll
+}
+
 function touchEnded() {
   if (document.getElementById('intro').classList.contains('visible')) return true;
-  // Only treat as a tap if the finger barely moved
-  const dx = touchX - _tapStartX;
-  const dy = touchY - _tapStartY;
+  const dx = _tapLastX - _tapStartX;
+  const dy = _tapLastY - _tapStartY;
   if (sqrt(dx * dx + dy * dy) < 12) {
     handlePress(_tapStartX, _tapStartY);
   }
