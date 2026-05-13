@@ -526,11 +526,21 @@ function drawLightbox() {
     textSize(12);
     textStyle(NORMAL);
     drawingContext.letterSpacing = '0.12em';
+    const hintPadX = 8, hintPadY = 4;
+    const hint1 = "[SPACEBAR TO LOAD RANDOM IMAGE]";
+    const hint2 = "[CLICK ANYWHERE TO CLOSE]";
+    const tw1 = textWidth(hint1);
+    const tw2 = textWidth(hint2);
     noStroke();
+    // white pill backgrounds
+    fill(255, 255, 255, fadeA * 102); // 40% white
+    rect(width / 2 - tw1 / 2 - hintPadX, py - 14 - 12 - hintPadY, tw1 + hintPadX * 2, 12 + hintPadY * 2);
+    rect(width / 2 - tw2 / 2 - hintPadX, py + sz + 28 - 12 - hintPadY, tw2 + hintPadX * 2, 12 + hintPadY * 2);
+    // text
     fill(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], fadeA * 180);
     textAlign(CENTER, BOTTOM);
-    text("[SPACEBAR TO LOAD RANDOM IMAGE]", width / 2, py - 14);
-    text("[CLICK ANYWHERE TO CLOSE]", width / 2, py + sz + 28);
+    text(hint1, width / 2, py - 14);
+    text(hint2, width / 2, py + sz + 28);
     drawingContext.letterSpacing = '0px';
   }
   pop();
