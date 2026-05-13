@@ -533,7 +533,7 @@ function keyPressed() {
     lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
     lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
     let bx = barZoneStart + leftAnchorW;
-    while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
+    while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 8) {
       const gap = random(0, 30);
       bx += gap;
       const barW = random(3, 40);
@@ -575,7 +575,7 @@ function handlePress(px, py) {
       lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
       lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
       let bx = barZoneStart + leftAnchorW;
-      while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
+      while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 8) {
         const gap = random(0, 30);
         bx += gap;
         const barW = random(3, 40);
