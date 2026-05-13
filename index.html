@@ -5,7 +5,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Photo Gallery</title>
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
-  <link href="https://fonts.googleapis.com/css2?family=Barlow:wght@300;400;500&family=Barlow+Condensed:wght@300;400;500&display=swap" rel="stylesheet">
+  <link href="https://fonts.googleapis.com/css2?family=Inconsolata:wght@300;400;500&display=swap" rel="stylesheet">
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
     body { background: #fff; overflow-x: hidden; overflow-y: auto; position: relative; }
@@ -35,7 +35,7 @@
       background: rgba(255, 255, 255, 0.6);
       border: 1px solid rgba(0, 195, 210, 0.5);
       color: rgba(0, 195, 210, 0.8);
-      font-family: 'Barlow', sans-serif;
+      font-family: 'Inconsolata', monospace;
       font-size: 10px;
       letter-spacing: 0.12em;
       padding: 3px 8px;
@@ -72,7 +72,7 @@
       pointer-events: none;
     }
     #intro-text {
-      font-family: 'Barlow Condensed', monospace;
+      font-family: 'Inconsolata', monospace;
       font-size: 22px;
       letter-spacing: 0.06em;
       color: rgba(0, 0, 0, 0.75);
@@ -96,7 +96,7 @@
       background: rgba(255, 255, 255, 0.6);
       border: 1px solid rgba(0, 195, 210, 0.5);
       color: rgba(0, 195, 210, 0.8);
-      font-family: 'Barlow', sans-serif;
+      font-family: 'Inconsolata', monospace;
       font-size: 10px;
       letter-spacing: 0.12em;
       padding: 3px 8px;
@@ -118,7 +118,7 @@
       background: rgba(255, 255, 255, 0.6);
       border: 1px solid rgba(0, 195, 210, 0.5);
       color: rgba(0, 195, 210, 0.8);
-      font-family: 'Barlow', sans-serif;
+      font-family: 'Inconsolata', monospace;
       font-size: 10px;
       letter-spacing: 0.12em;
       padding: 3px 8px;
@@ -500,7 +500,7 @@ function drawLightbox() {
 
   if (lightboxT > 0.8) {
     const fadeA = (lightboxT - 0.8) / 0.2;
-    textFont('Barlow Condensed');
+    textFont('Inconsolata');
     textSize(10);
     textStyle(NORMAL);
     noStroke();
