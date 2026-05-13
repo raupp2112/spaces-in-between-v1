@@ -342,14 +342,20 @@ function drawLightbox() {
     image(imgs[idx], px, py, sz, sz);
     noTint();
 
-    // Overlay: second random image at 50% opacity with blend mode
-    if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] && imgs[lightboxOverlayIdx].width > 1) {
+    // Overlay: second image revealed through random vertical bars (clipping mask)
+    if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] &&
+        imgs[lightboxOverlayIdx].width > 1 && lightboxBars.length > 0) {
       drawingContext.shadowBlur = 0;
-      drawingContext.globalCompositeOperation = 'overlay';
-      tint(255, lightboxT * 128); // 50% × fade-in
+      drawingContext.save();
+      drawingContext.beginPath();
+      for (const bar of lightboxBars) {
+        drawingContext.rect(px + bar.x, py, bar.w, sz);
+      }
+      drawingContext.clip();
+      tint(255, lightboxT * 255);
       image(imgs[lightboxOverlayIdx], px, py, sz, sz);
       noTint();
-      drawingContext.globalCompositeOperation = 'source-over'; // restore default
+      drawingContext.restore();
     }
 
     // Thin cyan frame
@@ -371,7 +377,8 @@ function drawLightbox() {
 }
 
 let lastLightboxIdx    = 0;
-let lightboxOverlayIdx = -1; // second randomly chosen image drawn at 50% on top
+let lightboxOverlayIdx = -1; // second randomly chosen image drawn on top
+let lightboxBars       = []; // vertical bar mask: [{x, w}] offsets from image left edge
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 function mousePressed() {
@@ -391,6 +398,18 @@ function mousePressed() {
       let oi = floor(random(PHOTOS.length));
       if (oi === i) oi = (oi + 1) % PHOTOS.length;
       lightboxOverlayIdx = oi;
+
+      // Build random vertical bar mask for the overlay
+      const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
+      lightboxBars = [];
+      let bx = 0;
+      while (bx < sz) {
+        const gap = random(0, 30);   // random gap before this bar (some bars touch)
+        bx += gap;
+        const barW = random(5, 20);  // bar width 5–20px
+        if (bx < sz) lightboxBars.push({ x: bx, w: min(barW, sz - bx) });
+        bx += barW;
+      }
       for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
       return;
     }
