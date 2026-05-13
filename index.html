@@ -487,13 +487,6 @@ function drawLightbox() {
       drawingContext.restore();
     }
 
-    // Single color stripe with OVERLAY blend mode
-    drawingContext.save();
-    drawingContext.globalCompositeOperation = 'lighter';
-    noStroke();
-    fill(lightboxStripe.r, lightboxStripe.g, lightboxStripe.b, 128 * lightboxT);
-    rect(px + lightboxStripe.x, py, lightboxStripe.w, sz);
-    drawingContext.restore();
 
     // Thin cyan frame
     noFill();
@@ -520,24 +513,6 @@ let lastLightboxIdx    = 0;
 let lightboxOverlayIdx = -1; // second randomly chosen image drawn on top
 let lightboxBars       = []; // vertical bar mask: [{x, w}] offsets from image left edge
 let lightboxBarT       = 0;  // 0→1 bar reveal animation progress
-let lightboxStripe     = { x: 0, w: 0, r: 0, g: 0, b: 0 }; // single color stripe
-
-function sampleImgColor(img) {
-  // Average color from a grid of samples across the image
-  if (!img || img.width < 1) return { r: 128, g: 128, b: 128 };
-  const steps = 16; // 16x16 = 256 samples
-  let r = 0, g = 0, b = 0, count = 0;
-  for (let row = 0; row < steps; row++) {
-    for (let col = 0; col < steps; col++) {
-      const sx = floor((col / (steps - 1)) * (img.width  - 1));
-      const sy = floor((row / (steps - 1)) * (img.height - 1));
-      const c  = img.get(sx, sy);
-      r += c[0]; g += c[1]; b += c[2];
-      count++;
-    }
-  }
-  return { r: floor(r / count), g: floor(g / count), b: floor(b / count) };
-}
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 function keyPressed() {
@@ -547,7 +522,7 @@ function keyPressed() {
     if (oi === lightboxIdx) oi = (oi + 1) % PHOTOS.length;
     lightboxOverlayIdx = oi;
     // Regenerate bars
-    const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
+    const sz = min(windowWidth - 40, windowHeight - 120, windowWidth * 0.9);
     lightboxBars = [];
     const barZoneStart = sz * 0.15;
     const barZoneEnd   = sz * 0.85;
@@ -563,9 +538,6 @@ function keyPressed() {
       if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
       bx += barW;
     }
-    const sw = random(50, 100);
-    const sc = sampleImgColor(imgs[lightboxOverlayIdx] || imgs[lightboxIdx]);
-    lightboxStripe = { x: random(barZoneStart, max(barZoneStart, barZoneEnd - sw)), w: min(sw, barZoneEnd - barZoneStart), r: sc.r, g: sc.g, b: sc.b };
     lightboxBarT = 0;
     return false; // prevent page scroll
   }
@@ -591,7 +563,7 @@ function mousePressed() {
       lightboxOverlayIdx = oi;
 
       // Build random vertical bar mask for the overlay
-      const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
+      const sz = min(windowWidth - 40, windowHeight - 120, windowWidth * 0.9);
       lightboxBars = [];
       const barZoneStart = sz * 0.15;  // leave 15% clear on the left
       const barZoneEnd   = sz * 0.85;  // leave 15% clear on the right
@@ -610,8 +582,8 @@ function mousePressed() {
         bx += barW;
       }
       const sw = random(50, 100);
-      const sc = sampleImgColor(imgs[lightboxOverlayIdx] || imgs[lightboxIdx]);
-    lightboxStripe = { x: random(barZoneStart, max(barZoneStart, barZoneEnd - sw)), w: min(sw, barZoneEnd - barZoneStart), r: sc.r, g: sc.g, b: sc.b };
+      const sc = sampleImgBandColors(imgs[lightboxIdx], 5);
+    lightboxStripe = { x: random(barZoneStart, max(barZoneStart, barZoneEnd - sw)), w: min(sw, barZoneEnd - barZoneStart), colors: sc };
       lightboxBarT = 0;
       for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
       return;
@@ -620,6 +592,11 @@ function mousePressed() {
 
   // Click on empty space → ripple
   for (let k = 0; k < 3; k++) ripples.push(new Ripple(mouseX, mouseY));
+}
+
+function touchStarted() {
+  mousePressed();
+  return false; // prevent scroll/zoom interference
 }
 
 function windowResized() {
@@ -762,10 +739,10 @@ function randomizeGrid() {
 
 // ─── INTRO OVERLAY ────────────────────────────────────────────────────────────
 const INTRO_SENTENCES = [
-  "Detroit has 122K vacant lots where homes once stood.",
-  "It has thousands of isolated structures.",
-  "This experience pulls from thousands of photos of these spaces…",
-  "focusing not on the structures, but the spaces in between."
+  "Detroit has 122,000 vacant lots — more open land than most cities ever plan for.",
+  "Thousands of isolated structures dot its landscape.",
+  "This experience is built from thousands of photographs taken across the city.",
+  "A study of the spaces in between."
 ];
 
 (function initIntro() {
