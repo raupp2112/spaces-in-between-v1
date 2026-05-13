@@ -655,7 +655,7 @@ function generatePlaceholders(n) {
 }
 
 // ─── STRIPES ──────────────────────────────────────────────────────────────────
-const STRIPE_COUNT = windowWidth < 480 ? 40 : 120;
+const STRIPE_COUNT = 120; // reduced in initStripes() on mobile
 let stripes = [];
 
 class Stripe {
@@ -696,7 +696,8 @@ class Stripe {
 
 function initStripes() {
   stripes = [];
-  for (let i = 0; i < STRIPE_COUNT; i++) stripes.push(new Stripe(true));
+  const count = windowWidth < 480 ? 40 : STRIPE_COUNT;
+  for (let i = 0; i < count; i++) stripes.push(new Stripe(true));
 }
 
 // ─── RIPPLE ───────────────────────────────────────────────────────────────────
