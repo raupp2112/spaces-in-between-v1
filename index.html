@@ -402,8 +402,8 @@ function mousePressed() {
       // Build random vertical bar mask for the overlay
       const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
       lightboxBars = [];
-      const barZoneStart = sz * 0.1;  // leave 10% clear on the left
-      const barZoneEnd   = sz * 0.9;  // leave 10% clear on the right
+      const barZoneStart = sz * 0.15;  // leave 15% clear on the left
+      const barZoneEnd   = sz * 0.85;  // leave 15% clear on the right
       let bx = barZoneStart;
       while (bx < barZoneEnd && lightboxBars.length < 8) {
         const gap = random(0, 30);
