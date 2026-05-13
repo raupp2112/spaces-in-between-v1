@@ -430,15 +430,14 @@ function drawLightbox() {
   push();
   fill(255, 255, 255, lightboxT * 230);
   noStroke();
-  rect(0, 0, width, height);
+  rect(0, scrollY, windowWidth, windowHeight);
 
-  const pad  = 80;
-  const maxW = width  - pad * 2;
-  const maxH = height - pad * 2;
-  // cap at 35% of window width so it doesn't dominate the grid
-  const sz = min(maxW, maxH, width * 0.45);
-  const px = (width  - sz) / 2;
-  const py = (height - sz) / 2 + scrollY;
+  const pad  = 40;
+  const maxW = windowWidth  - pad * 2;
+  const maxH = windowHeight - pad * 2;
+  const sz = min(maxW, maxH, windowWidth * 0.9);
+  const px = (windowWidth  - sz) / 2;
+  const py = scrollY + (windowHeight - sz) / 2;
 
   if (imgs[idx] && imgs[idx].width > 1) {
     drawingContext.shadowOffsetX = 0;
