@@ -5,6 +5,11 @@ Watches the project directory for changes and notifies the browser via SSE.
 """
 import os, time, threading
 from http.server import SimpleHTTPRequestHandler, HTTPServer
+from socketserver import ThreadingMixIn
+
+class ThreadedHTTPServer(ThreadingMixIn, HTTPServer):
+    """Handle each request in a separate thread so SSE never blocks image loads."""
+    daemon_threads = True
 
 WATCH_DIR = os.path.dirname(os.path.abspath(__file__))
 WATCH_EXTS = {".html", ".js", ".css"}
@@ -87,4 +92,4 @@ class Handler(SimpleHTTPRequestHandler):
 if __name__ == "__main__":
     threading.Thread(target=watcher, daemon=True).start()
     print(f"Serving at http://localhost:{PORT}  (live reload active)")
-    HTTPServer(("", PORT), Handler).serve_forever()
+    ThreadedHTTPServer(("", PORT), Handler).serve_forever()
