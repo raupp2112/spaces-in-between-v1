@@ -523,8 +523,8 @@ function drawLightbox() {
   if (lightboxT > 0.8) {
     const fadeA = (lightboxT - 0.8) / 0.2;
     textFont('Inconsolata');
-    textSize(13);
-    textStyle(BOLD);
+    textSize(12);
+    textStyle(NORMAL);
     noStroke();
     fill(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], fadeA * 180);
     textAlign(CENTER, BOTTOM);
