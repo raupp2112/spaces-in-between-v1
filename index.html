@@ -528,15 +528,15 @@ function keyPressed() {
     lightboxBars = [];
     const barZoneStart = sz * 0.15;
     const barZoneEnd   = sz * 0.85;
-    const leftAnchorW  = random(3, 40);
-    const rightAnchorW = random(3, 40);
+    const leftAnchorW  = random(3, 28);
+    const rightAnchorW = random(3, 28);
     lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
     lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
     let bx = barZoneStart + leftAnchorW;
-    while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 8) {
+    while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
       const gap = random(0, 30);
       bx += gap;
-      const barW = random(3, 40);
+      const barW = random(3, 28);
       if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
       bx += barW;
     }
@@ -570,15 +570,15 @@ function handlePress(px, py) {
       lightboxBars = [];
       const barZoneStart = sz * 0.15;
       const barZoneEnd   = sz * 0.85;
-      const leftAnchorW  = random(3, 40);
-      const rightAnchorW = random(3, 40);
+      const leftAnchorW  = random(3, 28);
+      const rightAnchorW = random(3, 28);
       lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
       lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
       let bx = barZoneStart + leftAnchorW;
-      while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 8) {
+      while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
         const gap = random(0, 30);
         bx += gap;
-        const barW = random(3, 40);
+        const barW = random(3, 28);
         if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
         bx += barW;
       }
