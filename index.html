@@ -78,12 +78,7 @@ let plusRotT        = []; // 0‒1 hover lerp per plus sign
 const INTRO_STAGGER  = 0.2; // frames of random jitter between launches
 const INTRO_DURATION = 6;   // frames each individual pop takes
 
-// ─── PRELOAD ──────────────────────────────────────────────────────────────────
-function preload() {
-  for (let i = 0; i < PHOTOS.length; i++) {
-    imgs[i] = loadImage(PHOTOS[i]);
-  }
-}
+// No preload — images load asynchronously so the sketch starts immediately
 
 // ─── SETUP ────────────────────────────────────────────────────────────────────
 function setup() {
@@ -91,6 +86,8 @@ function setup() {
   createCanvas(windowWidth, canvasH);
   imageMode(CORNER);
   const totalCells = GRID_COLS * GRID_ROWS;
+  // Load images asynchronously — sketch runs immediately, images appear as ready
+  for (let i = 0; i < totalCells; i++) imgs[i] = loadImage(PHOTOS[i]);
   for (let i = 0; i < totalCells; i++) hoverT[i] = 0;
   const totalPlus = (GRID_COLS + 1) * (GRID_ROWS + 1);
   for (let i = 0; i < totalPlus; i++) plusRotT[i] = 0;
