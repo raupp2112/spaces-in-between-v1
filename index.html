@@ -402,12 +402,14 @@ function mousePressed() {
       // Build random vertical bar mask for the overlay
       const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
       lightboxBars = [];
-      let bx = 0;
-      while (bx < sz && lightboxBars.length < 8) {
-        const gap = random(0, 30);   // random gap before this bar
+      const barZoneStart = sz * 0.1;  // leave 10% clear on the left
+      const barZoneEnd   = sz * 0.9;  // leave 10% clear on the right
+      let bx = barZoneStart;
+      while (bx < barZoneEnd && lightboxBars.length < 8) {
+        const gap = random(0, 30);
         bx += gap;
-        const barW = random(3, 60);  // bar width 3–60px
-        if (bx < sz) lightboxBars.push({ x: bx, w: min(barW, sz - bx) });
+        const barW = random(3, 60);
+        if (bx < barZoneEnd) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - bx) });
         bx += barW;
       }
       for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
