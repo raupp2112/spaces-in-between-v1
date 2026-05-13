@@ -297,16 +297,17 @@ function draw() {
     }
   }
 
-  // Fisheye hover — each cell's influence is based on distance from the mouse
-  for (let i = 0; i < n; i++) {
-    const { x, y } = cellPos(i);
-    const cx = x + eCellSize / 2;
-    const cy = y + eCellSize / 2;
-    const d  = dist(mouseX, mouseY, cx, cy);
-    // Smooth cosine falloff: full strength at center, zero at HOVER_RADIUS
-    const raw    = max(0, 1 - d / HOVER_RADIUS);
-    const target = raw * raw; // ease-in curve for a natural taper
-    hoverT[i] = lerp(hoverT[i], target, 0.14);
+  // Fisheye hover — desktop only (mobile has no cursor and doesn't need the cost)
+  if (windowWidth >= 480) {
+    for (let i = 0; i < n; i++) {
+      const { x, y } = cellPos(i);
+      const cx = x + eCellSize / 2;
+      const cy = y + eCellSize / 2;
+      const d  = dist(mouseX, mouseY, cx, cy);
+      const raw    = max(0, 1 - d / HOVER_RADIUS);
+      const target = raw * raw;
+      hoverT[i] = lerp(hoverT[i], target, 0.14);
+    }
   }
 
   // Draw grid separators first (behind images)
