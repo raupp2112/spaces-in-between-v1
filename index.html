@@ -22,14 +22,12 @@
     }
 
     #ui {
-      position: fixed;
-      top: 0; left: 0; right: 0;
-      height: 36px;
-      display: flex;
-      align-items: center;
-      padding: 0 16px;
+      position: absolute;
       z-index: 100;
       pointer-events: none;
+      display: flex;
+      align-items: center;
+      gap: 8px;
     }
     #ui button {
       pointer-events: all;
@@ -105,6 +103,7 @@ function setup() {
 
   // Floating stripes
   initStripes();
+  positionUI();
 
   // Shuffle pop-in: random order, each thumbnail pops in place
   const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
@@ -369,6 +368,17 @@ function windowResized() {
   calcLayout();
   resizeCanvas(windowWidth, canvasH);
   initStripes();
+  positionUI();
+}
+
+function positionUI() {
+  const totalW  = cols * (eCellSize + eGap);
+  const offsetX = floor((windowWidth - totalW) / 2) + eGap;
+  // Sit in the gap row above the first thumbnail row
+  const offsetY = gridOffsetY;
+  const ui = document.getElementById('ui');
+  ui.style.left = offsetX + 'px';
+  ui.style.top  = offsetY + 'px';
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
