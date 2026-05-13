@@ -414,8 +414,7 @@ function calcLightboxSz() {
 function drawLightbox() {
   const target = lightboxIdx >= 0 ? 1 : 0;
   if (windowWidth < 480) {
-    // Linear step on mobile — snaps open in ~6 frames instead of crawling asymptotically
-    lightboxT = target === 1 ? min(1, lightboxT + 0.18) : max(0, lightboxT - 0.18);
+    lightboxT = target; // instant open/close on mobile
   } else {
     lightboxT = lerp(lightboxT, target, 0.14);
   }
@@ -611,6 +610,8 @@ function touchMoved() {
 }
 
 function touchEnded() {
+  // Only handle on real touch devices — ignore trackpad touch events on desktop
+  if (navigator.maxTouchPoints === 0) return true;
   if (document.getElementById('intro').classList.contains('visible')) return true;
   const dx = _tapLastX - _tapStartX;
   const dy = _tapLastY - _tapStartY;
