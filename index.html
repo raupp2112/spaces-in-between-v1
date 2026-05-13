@@ -413,8 +413,12 @@ function calcLightboxSz() {
 // ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
 function drawLightbox() {
   const target = lightboxIdx >= 0 ? 1 : 0;
-  const lerpSpeed = windowWidth < 480 ? 0.22 : 0.14;
-  lightboxT = lerp(lightboxT, target, lerpSpeed);
+  if (windowWidth < 480) {
+    // Linear step on mobile — snaps open in ~6 frames instead of crawling asymptotically
+    lightboxT = target === 1 ? min(1, lightboxT + 0.18) : max(0, lightboxT - 0.18);
+  } else {
+    lightboxT = lerp(lightboxT, target, 0.14);
+  }
   if (lightboxIdx >= 0) lightboxBarT = min(1, lightboxBarT + 0.09);
   else lightboxBarT = 0;
   if (lightboxT < 0.02) return;
@@ -437,7 +441,7 @@ function drawLightbox() {
       drawingContext.shadowBlur    = 24 * lightboxT;
       drawingContext.shadowColor   = `rgba(0,0,0,${0.15 * lightboxT})`;
     }
-    tint(255, lightboxT * 255);
+    if (windowWidth >= 480) tint(255, lightboxT * 255);
     image(imgs[idx], px, py, sz, sz);
     noTint();
     drawingContext.shadowOffsetX = 0;
