@@ -245,12 +245,16 @@ function setup() {
   initStripes();
   positionUI();
 
-  // Staggered fade-in: random order, each thumbnail fades in at its grid position
-  const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
-  introStartFrame = new Array(totalCells);
-  introProgress   = new Array(totalCells).fill(0);
-  for (let rank = 0; rank < totalCells; rank++) {
-    introStartFrame[order[rank]] = rank * INTRO_STAGGER;
+  // Staggered fade-in: desktop only — on mobile show all thumbnails instantly
+  introStartFrame = new Array(totalCells).fill(0);
+  if (windowWidth < 480) {
+    introProgress = new Array(totalCells).fill(1);
+  } else {
+    const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
+    introProgress = new Array(totalCells).fill(0);
+    for (let rank = 0; rank < totalCells; rank++) {
+      introStartFrame[order[rank]] = rank * INTRO_STAGGER;
+    }
   }
 }
 
@@ -283,11 +287,13 @@ function calcLayout() {
 function draw() {
   clear(); // transparent canvas — map shows through gaps between photos
 
-  // Advance intro animation
+  // Advance intro animation (desktop only — mobile thumbnails are pre-set to 1)
   const n = GRID_COLS * GRID_ROWS;
-  for (let i = 0; i < n; i++) {
-    if (frameCount >= introStartFrame[i]) {
-      introProgress[i] = min(1, (frameCount - introStartFrame[i]) / INTRO_DURATION);
+  if (windowWidth >= 480) {
+    for (let i = 0; i < n; i++) {
+      if (frameCount >= introStartFrame[i]) {
+        introProgress[i] = min(1, (frameCount - introStartFrame[i]) / INTRO_DURATION);
+      }
     }
   }
 
@@ -765,11 +771,15 @@ function randomizeGrid() {
     imgs[i] = loadImage(PHOTOS[i]);
   }
 
-  // Re-trigger fade-in
-  const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
-  for (let rank = 0; rank < totalCells; rank++) {
-    introStartFrame[order[rank]] = frameCount + rank * INTRO_STAGGER;
-    introProgress[order[rank]]   = 0;
+  // Re-trigger fade-in (desktop only — show instantly on mobile)
+  if (windowWidth < 480) {
+    introProgress.fill(1);
+  } else {
+    const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
+    for (let rank = 0; rank < totalCells; rank++) {
+      introStartFrame[order[rank]] = frameCount + rank * INTRO_STAGGER;
+      introProgress[order[rank]]   = 0;
+    }
   }
 }
 
