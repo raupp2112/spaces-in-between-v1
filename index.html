@@ -194,19 +194,16 @@ let cols, rows, canvasH, gridOffsetY;
 let eCellSize, eGap; // effective (scaled) cell size and gap
 
 // intro animation
-let introStartFrame = []; // frame at which each thumbnail begins flying
-let introProgress   = []; // 0‒1 flight progress per thumbnail
-let introStartX     = []; // random scatter origin X
-let introStartY     = []; // random scatter origin Y
-let introStartRot   = []; // random starting rotation (radians)
+let introProgress   = []; // 0‒1 fade-in progress per thumbnail
+let introStartFrame = []; // frame at which each thumbnail begins fading in
 let plusRotT        = []; // 0‒1 hover lerp per plus sign
 let plusSpinProg    = []; // 0‒1 progress through the 2-turn spin animation
 let plusSpinStart   = []; // frame each plus begins spinning
 const PLUS_SPIN_DUR     = 50;  // frames per plus to complete 2 turns
 const PLUS_SPIN_STAGGER = 0.8; // frames between each diagonal step
 
-const INTRO_STAGGER  = 0.2; // frames of random jitter between launches
-const INTRO_DURATION = 6;   // frames each individual pop takes
+const INTRO_STAGGER  = 0.5; // frames between each thumbnail fade-in
+const INTRO_DURATION = 12;  // frames each fade takes
 
 // No preload — images load asynchronously so the sketch starts immediately
 
@@ -230,19 +227,12 @@ function setup() {
   initStripes();
   positionUI();
 
-  // Shuffle pop-in: random order, each thumbnail pops in place
+  // Staggered fade-in: random order, each thumbnail fades in at its grid position
   const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
   introStartFrame = new Array(totalCells);
   introProgress   = new Array(totalCells).fill(0);
-  introStartX     = new Array(totalCells);
-  introStartY     = new Array(totalCells);
   for (let rank = 0; rank < totalCells; rank++) {
-    const i = order[rank];
-    const { x, y } = cellPos(i);
-    introStartX[i]     = x;
-    introStartY[i]     = y;
-    introStartRot[i]   = random(-0.26, 0.26); // random start rotation ±15°
-    introStartFrame[i] = rank * INTRO_STAGGER;
+    introStartFrame[order[rank]] = rank * INTRO_STAGGER;
   }
 }
 
@@ -369,39 +359,25 @@ function plusSign(x, y, rot = 0) {
 
 // ─── THUMBNAIL ────────────────────────────────────────────────────────────────
 function drawThumb(i) {
-  const p  = introProgress[i];
-  if (p <= 0) return; // not yet launched
+  const p = introProgress[i];
+  if (p <= 0) return;
 
-  const { x: gx, y: gy } = cellPos(i); // final grid position
-  const t       = hoverT[i];
-
-  // Ease-out-back: overshoot the destination slightly then settle
-  const ep  = easeOutBack(p);
-  const cx  = lerp(introStartX[i], gx, ep); // current interpolated X
-  const cy  = lerp(introStartY[i], gy, ep); // current interpolated Y
-
-  const hoverSc = 1 + t * HOVER_MAX;
-  const sc      = hoverSc;
-  const ox      = (eCellSize * (sc - 1)) / 2;
-  const oy      = (eCellSize * (sc - 1)) / 2;
-  const alpha   = min(1, p * 3) * 255;
-  const rot     = lerp(introStartRot[i], 0, easeOutBack(p)); // spin to upright
+  const { x, y } = cellPos(i);
+  const t     = hoverT[i];
+  const alpha = min(1, p) * 255;
+  const sc    = 1 + t * HOVER_MAX;
+  const ox    = (eCellSize * (sc - 1)) / 2;
+  const oy    = (eCellSize * (sc - 1)) / 2;
 
   push();
-
-  // Rotate around the thumbnail's centre
-  translate(cx + eCellSize / 2, cy + eCellSize / 2);
-  rotate(rot);
-  translate(-(cx + eCellSize / 2), -(cy + eCellSize / 2));
-
   if (imgs[i] && imgs[i].width > 0) {
     tint(255, alpha);
-    image(imgs[i], cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
+    image(imgs[i], x - ox, y - oy, eCellSize * sc, eCellSize * sc);
     noTint();
   } else {
     fill(220, alpha);
     noStroke();
-    rect(cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
+    rect(x - ox, y - oy, eCellSize * sc, eCellSize * sc);
   }
 
   // Thin cyan border on hover
@@ -409,7 +385,7 @@ function drawThumb(i) {
     noFill();
     stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], t * 220);
     strokeWeight(1.5);
-    rect(cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
+    rect(x - ox, y - oy, eCellSize * sc, eCellSize * sc);
   }
   pop();
 }
@@ -768,13 +744,11 @@ function randomizeGrid() {
     imgs[i] = loadImage(PHOTOS[i]);
   }
 
-  // Re-trigger intro animation
+  // Re-trigger fade-in
   const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
   for (let rank = 0; rank < totalCells; rank++) {
-    const i = order[rank];
-    introStartRot[i]   = random(-0.26, 0.26);
-    introStartFrame[i] = frameCount + rank * INTRO_STAGGER;
-    introProgress[i]   = 0;
+    introStartFrame[order[rank]] = frameCount + rank * INTRO_STAGGER;
+    introProgress[order[rank]]   = 0;
   }
 }
 
