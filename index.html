@@ -595,8 +595,10 @@ function mousePressed() {
 }
 
 function touchStarted() {
+  // If intro overlay is up, let touch events pass through to HTML buttons
+  if (document.getElementById('intro').classList.contains('visible')) return true;
   mousePressed();
-  return false; // prevent scroll/zoom interference
+  return false; // prevent scroll/zoom interference on canvas
 }
 
 function windowResized() {
