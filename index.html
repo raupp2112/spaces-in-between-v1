@@ -1,0 +1,430 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8" />
+  <meta name="viewport" content="width=device-width, initial-scale=1.0" />
+  <title>Photo Gallery</title>
+  <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
+  <style>
+    * { margin: 0; padding: 0; box-sizing: border-box; }
+    body { background: #fff; overflow-x: hidden; overflow-y: auto; }
+    canvas { display: block; }
+
+    #ui {
+      position: fixed;
+      top: 0; left: 0; right: 0;
+      height: 36px;
+      display: flex;
+      align-items: center;
+      padding: 0 16px;
+      z-index: 100;
+      pointer-events: none;
+    }
+    #ui button {
+      pointer-events: all;
+      background: none;
+      border: 1px solid rgba(0, 195, 210, 0.5);
+      color: rgba(0, 195, 210, 0.8);
+      font-family: monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #ui button:hover {
+      border-color: rgba(0, 195, 210, 1);
+      color: rgba(0, 195, 210, 1);
+    }
+  </style>
+</head>
+<body>
+<div id="ui">
+  <button onclick="randomizeGrid()">[RANDOMIZE]</button>
+</div>
+<script>
+// ─── CONFIGURATION ────────────────────────────────────────────────────────────
+const CELL_SIZE   = 40;    // thumbnail size in px (width = height)
+const GAP         = 20;    // space between cells (where the bracket markers sit)
+const GRID_COLS   = 13;    // max columns (used at ≥ 1920px)
+const GRID_ROWS   = 13;    // fixed number of rows
+
+// All available images — shuffled so the grid shows a random selection each load
+const ALL_IMAGES = Array.from({ length: 836 }, (_, i) =>
+  `images/${String(i + 1).padStart(3, "0")}.jpg`
+);
+let PHOTOS = ALL_IMAGES.slice().sort(() => Math.random() - 0.5).slice(0, GRID_COLS * GRID_ROWS);
+const PLUS_SIZE      = 4;    // half-length of each plus arm
+const HOVER_MAX      = 1.20; // max scale boost for the cell under the cursor
+const HOVER_RADIUS   = 80;   // px — distance over which magnification falls off
+const MARKER_COL  = [0, 195, 210]; // cyan RGB
+
+// ─── STATE ────────────────────────────────────────────────────────────────────
+let imgs           = [];
+let hoverT         = [];
+let lightboxIdx    = -1;
+let lightboxT      = 0;
+let ripples        = [];
+let cols, rows, canvasH, gridOffsetY;
+let eCellSize, eGap; // effective (scaled) cell size and gap
+
+// intro animation
+let introStartFrame = []; // frame at which each thumbnail begins flying
+let introProgress   = []; // 0‒1 flight progress per thumbnail
+let introStartX     = []; // random scatter origin X
+let introStartY     = []; // random scatter origin Y
+let introStartRot   = []; // random starting rotation (radians)
+let plusRotT        = []; // 0‒1 hover lerp per plus sign
+const INTRO_STAGGER  = 0.2; // frames of random jitter between launches
+const INTRO_DURATION = 6;   // frames each individual pop takes
+
+// ─── PRELOAD ──────────────────────────────────────────────────────────────────
+function preload() {
+  for (let i = 0; i < PHOTOS.length; i++) {
+    imgs[i] = loadImage(PHOTOS[i]);
+  }
+}
+
+// ─── SETUP ────────────────────────────────────────────────────────────────────
+function setup() {
+  calcLayout();
+  createCanvas(windowWidth, canvasH);
+  imageMode(CORNER);
+  const totalCells = GRID_COLS * GRID_ROWS;
+  for (let i = 0; i < totalCells; i++) hoverT[i] = 0;
+  const totalPlus = (GRID_COLS + 1) * (GRID_ROWS + 1);
+  for (let i = 0; i < totalPlus; i++) plusRotT[i] = 0;
+
+  // Shuffle pop-in: random order, each thumbnail pops in place
+  const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
+  introStartFrame = new Array(totalCells);
+  introProgress   = new Array(totalCells).fill(0);
+  introStartX     = new Array(totalCells);
+  introStartY     = new Array(totalCells);
+  for (let rank = 0; rank < totalCells; rank++) {
+    const i = order[rank];
+    const { x, y } = cellPos(i);
+    introStartX[i]     = x;
+    introStartY[i]     = y;
+    introStartRot[i]   = random(-0.26, 0.26); // random start rotation ±15°
+    introStartFrame[i] = rank * INTRO_STAGGER;
+  }
+}
+
+function calcLayout() {
+  // Reflow columns based on breakpoints — thumbnails stay full size
+  if      (windowWidth <  480)  cols = 4;
+  else if (windowWidth <  768)  cols = 7;
+  else if (windowWidth < 1024)  cols = 10;
+  else                          cols = GRID_COLS; // 13
+
+  // Always use full-size cells — no shrinking
+  eCellSize = CELL_SIZE;
+  eGap      = GAP;
+
+  const totalPhotos = GRID_COLS * GRID_ROWS;
+  rows = ceil(totalPhotos / cols);
+
+  const gridH = rows * (eCellSize + eGap) + eGap;
+
+  // Center vertically only when grid fits in the window
+  canvasH     = max(windowHeight, gridH + eGap * 2);
+  gridOffsetY = floor((canvasH - gridH) / 2);
+}
+
+// ─── DRAW ─────────────────────────────────────────────────────────────────────
+function draw() {
+  background(255);
+
+  // Advance intro animation
+  const n = GRID_COLS * GRID_ROWS;
+  for (let i = 0; i < n; i++) {
+    if (frameCount >= introStartFrame[i]) {
+      introProgress[i] = min(1, (frameCount - introStartFrame[i]) / INTRO_DURATION);
+    }
+  }
+
+  // Fisheye hover — each cell's influence is based on distance from the mouse
+  for (let i = 0; i < n; i++) {
+    const { x, y } = cellPos(i);
+    const cx = x + eCellSize / 2;
+    const cy = y + eCellSize / 2;
+    const d  = dist(mouseX, mouseY, cx, cy);
+    // Smooth cosine falloff: full strength at center, zero at HOVER_RADIUS
+    const raw    = max(0, 1 - d / HOVER_RADIUS);
+    const target = raw * raw; // ease-in curve for a natural taper
+    hoverT[i] = lerp(hoverT[i], target, 0.14);
+  }
+
+  // Draw grid separators first (behind images)
+  drawMarkers();
+
+  // Draw photos
+  for (let i = 0; i < n; i++) drawThumb(i);
+
+  // Ripples
+  for (let i = ripples.length - 1; i >= 0; i--) {
+    ripples[i].update();
+    ripples[i].draw();
+    if (ripples[i].dead()) ripples.splice(i, 1);
+  }
+
+  // Lightbox on top
+  if (lightboxIdx >= 0 || lightboxT > 0.01) drawLightbox();
+}
+
+// ─── GRID MARKERS (cyan plus signs between cells) ─────────────────────────────
+function drawMarkers() {
+  push();
+  stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], 80);
+  strokeWeight(1);
+
+  const totalW  = cols * (eCellSize + eGap);
+  const offsetX = floor((windowWidth - totalW) / 2) + eGap;
+
+  // Each cell contributes its hoverT to its 4 corner plusses.
+  // A plus shared by multiple cells takes the strongest influence.
+  const totalCells  = GRID_COLS * GRID_ROWS;
+  const plusCount   = (GRID_COLS + 1) * (GRID_ROWS + 1);
+  const plusTarget  = new Float32Array(plusCount);
+  for (let i = 0; i < totalCells; i++) {
+    if (hoverT[i] < 0.01) continue;
+    const hCol = i % GRID_COLS;
+    const hRow = floor(i / GRID_COLS);
+    const corners = [
+       hRow      * (GRID_COLS + 1) + hCol,
+       hRow      * (GRID_COLS + 1) + hCol + 1,
+      (hRow + 1) * (GRID_COLS + 1) + hCol,
+      (hRow + 1) * (GRID_COLS + 1) + hCol + 1,
+    ];
+    for (const c of corners) plusTarget[c] = max(plusTarget[c], hoverT[i]);
+  }
+
+  // Draw every plus with its driven rotation
+  for (let row = 0; row <= rows; row++) {
+    for (let col = 0; col <= cols; col++) {
+      const mx  = offsetX + col * (eCellSize + eGap) - eGap / 2;
+      const my  = gridOffsetY + eGap + row * (eCellSize + eGap) - eGap / 2;
+      const idx = row * (GRID_COLS + 1) + col;
+      plusRotT[idx] = lerp(plusRotT[idx], plusTarget[idx], 0.14);
+      plusSign(mx, my, plusRotT[idx] * PI / 2);
+    }
+  }
+  pop();
+}
+
+function plusSign(x, y, rot = 0) {
+  push();
+  translate(x, y);
+  rotate(rot);
+  line(-PLUS_SIZE, 0, PLUS_SIZE, 0); // horizontal arm
+  line(0, -PLUS_SIZE, 0, PLUS_SIZE); // vertical arm
+  pop();
+}
+
+// ─── THUMBNAIL ────────────────────────────────────────────────────────────────
+function drawThumb(i) {
+  const p  = introProgress[i];
+  if (p <= 0) return; // not yet launched
+
+  const { x: gx, y: gy } = cellPos(i); // final grid position
+  const t       = hoverT[i];
+
+  // Ease-out-back: overshoot the destination slightly then settle
+  const ep  = easeOutBack(p);
+  const cx  = lerp(introStartX[i], gx, ep); // current interpolated X
+  const cy  = lerp(introStartY[i], gy, ep); // current interpolated Y
+
+  const hoverSc = 1 + t * HOVER_MAX;
+  const sc      = hoverSc;
+  const ox      = (eCellSize * (sc - 1)) / 2;
+  const oy      = (eCellSize * (sc - 1)) / 2;
+  const alpha   = min(1, p * 3) * 255;
+  const rot     = lerp(introStartRot[i], 0, easeOutBack(p)); // spin to upright
+
+  push();
+  if (t > 0.05) {
+    drawingContext.shadowBlur  = 8 + t * 18;
+    drawingContext.shadowColor = `rgba(0, 195, 210, ${0.25 + t * 0.4})`;
+  }
+
+  // Rotate around the thumbnail's centre
+  translate(cx + eCellSize / 2, cy + eCellSize / 2);
+  rotate(rot);
+  translate(-(cx + eCellSize / 2), -(cy + eCellSize / 2));
+
+  if (imgs[i] && imgs[i].width > 0) {
+    tint(255, alpha);
+    image(imgs[i], cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
+    noTint();
+  } else {
+    fill(220, alpha);
+    noStroke();
+    rect(cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
+  }
+
+  // Thin cyan border on hover
+  if (t > 0.05) {
+    noFill();
+    stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], t * 220);
+    strokeWeight(1.5);
+    rect(cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
+  }
+  pop();
+}
+
+// Overshoot spring: shoots past 1 then snaps back
+function easeOutBack(t) {
+  if (t <= 0) return 0;
+  if (t >= 1) return 1;
+  if (t < 0.6) return map(t, 0, 0.6, 0, 1.25);
+  return map(t, 0.6, 1.0, 1.25, 1.0);
+}
+
+// ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
+function drawLightbox() {
+  const target = lightboxIdx >= 0 ? 1 : 0;
+  lightboxT = lerp(lightboxT, target, 0.14);
+  if (lightboxT < 0.02) return;
+
+  const idx = lightboxIdx >= 0 ? lightboxIdx : lastLightboxIdx;
+
+  push();
+  fill(255, 255, 255, lightboxT * 230);
+  noStroke();
+  rect(0, 0, width, height);
+
+  const pad  = 80;
+  const maxW = width  - pad * 2;
+  const maxH = height - pad * 2;
+  // cap at 35% of window width so it doesn't dominate the grid
+  const sz = min(maxW, maxH, width * 0.45);
+  const px = (width  - sz) / 2;
+  const py = (height - sz) / 2 + scrollY;
+
+  if (imgs[idx] && imgs[idx].width > 0) {
+    drawingContext.shadowBlur  = 40 * lightboxT;
+    drawingContext.shadowColor = `rgba(0,195,210,${0.3 * lightboxT})`;
+    tint(255, lightboxT * 255);
+    image(imgs[idx], px, py, sz, sz);
+    noTint();
+    // Thin cyan frame
+    noFill();
+    stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], lightboxT * 180);
+    strokeWeight(1.5);
+    rect(px, py, sz, sz);
+  }
+
+  if (lightboxT > 0.8) {
+    fill(100, 100, 100, (lightboxT - 0.8) / 0.2 * 180);
+    textAlign(CENTER, BOTTOM);
+    textSize(13);
+    textStyle(NORMAL);
+    noStroke();
+    text("click anywhere to close", width / 2, py + sz + 28);
+  }
+  pop();
+}
+
+let lastLightboxIdx = 0;
+
+// ─── INPUT ────────────────────────────────────────────────────────────────────
+function mousePressed() {
+  if (lightboxIdx >= 0) {
+    lastLightboxIdx = lightboxIdx;
+    lightboxIdx = -1;
+    return;
+  }
+
+  for (let i = 0; i < PHOTOS.length; i++) {
+    const { x, y } = cellPos(i);
+    if (mouseX > x && mouseX < x + eCellSize &&
+        mouseY > y && mouseY < y + eCellSize) {
+      lightboxIdx = i;
+      lastLightboxIdx = i;
+      for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
+      return;
+    }
+  }
+
+  // Click on empty space → ripple
+  for (let k = 0; k < 3; k++) ripples.push(new Ripple(mouseX, mouseY));
+}
+
+function windowResized() {
+  calcLayout();
+  resizeCanvas(windowWidth, canvasH);
+}
+
+// ─── HELPERS ──────────────────────────────────────────────────────────────────
+function cellPos(i) {
+  const totalW  = cols * (eCellSize + eGap);
+  const offsetX = floor((windowWidth - totalW) / 2) + eGap;
+  const col = i % cols;
+  const row = floor(i / cols);
+  return {
+    x: offsetX + col * (eCellSize + eGap),
+    y: gridOffsetY + eGap + row * (eCellSize + eGap),
+  };
+}
+
+function generatePlaceholders(n) {
+  // Uses picsum.photos with unique seeds so each looks different.
+  // Replace this entire array with your own photo paths when ready.
+  return Array.from({ length: n }, (_, i) =>
+    `https://picsum.photos/seed/${i * 7 + 11}/200/200`
+  );
+}
+
+// ─── RIPPLE ───────────────────────────────────────────────────────────────────
+class Ripple {
+  constructor(x, y) {
+    this.x    = x;
+    this.y    = y;
+    this.r    = 4;
+    this.maxR = random(60, 160);
+    this.spd  = random(2, 4);
+    this.a    = 180;
+  }
+  update() {
+    this.r += this.spd;
+    this.a  = map(this.r, 0, this.maxR, 180, 0);
+  }
+  draw() {
+    push();
+    noFill();
+    stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], this.a);
+    strokeWeight(map(this.r, 0, this.maxR, 1.5, 0.3));
+    ellipse(this.x, this.y, this.r * 2);
+    pop();
+  }
+  dead() { return this.r >= this.maxR; }
+}
+
+// ─── RANDOMIZE ────────────────────────────────────────────────────────────────
+function randomizeGrid() {
+  PHOTOS = ALL_IMAGES.slice().sort(() => Math.random() - 0.5).slice(0, GRID_COLS * GRID_ROWS);
+  const totalCells = GRID_COLS * GRID_ROWS;
+
+  // Reload images
+  for (let i = 0; i < totalCells; i++) {
+    imgs[i] = loadImage(PHOTOS[i]);
+  }
+
+  // Re-trigger intro animation
+  const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
+  for (let rank = 0; rank < totalCells; rank++) {
+    const i = order[rank];
+    introStartRot[i]   = random(-0.26, 0.26);
+    introStartFrame[i] = frameCount + rank * INTRO_STAGGER;
+    introProgress[i]   = 0;
+  }
+}
+</script>
+<!-- live reload — remove in production -->
+<script>
+  const es = new EventSource("/__reload");
+  es.onmessage = e => { if (e.data === "reload") location.reload(); };
+</script>
+</body>
+</html>
