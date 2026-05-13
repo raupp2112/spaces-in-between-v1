@@ -482,18 +482,20 @@ function drawLightbox() {
     if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] &&
         imgs[lightboxOverlayIdx].width > 1 && lightboxBars.length > 0) {
       drawingContext.shadowBlur = 0;
-      // Draw gradient drop shadows in sync with bar reveal animation
-      const shadowBarEase = easeInOutCubic(lightboxBarT);
-      const shadowW = 4;
-      for (const bar of lightboxBars) {
-        const cx = px + bar.x + bar.w * 0.5;
-        const halfW = bar.w * 0.5 * shadowBarEase;
-        const rightEdge = cx + halfW;
-        const grd = drawingContext.createLinearGradient(rightEdge, 0, rightEdge + shadowW, 0);
-        grd.addColorStop(0, `rgba(0,0,0,${0.05 * lightboxT})`);
-        grd.addColorStop(1, 'rgba(0,0,0,0)');
-        drawingContext.fillStyle = grd;
-        drawingContext.fillRect(rightEdge, py, shadowW, sz);
+      // Draw gradient drop shadows in sync with bar reveal animation (desktop only)
+      if (windowWidth >= 480) {
+        const shadowBarEase = easeInOutCubic(lightboxBarT);
+        const shadowW = 4;
+        for (const bar of lightboxBars) {
+          const cx = px + bar.x + bar.w * 0.5;
+          const halfW = bar.w * 0.5 * shadowBarEase;
+          const rightEdge = cx + halfW;
+          const grd = drawingContext.createLinearGradient(rightEdge, 0, rightEdge + shadowW, 0);
+          grd.addColorStop(0, `rgba(0,0,0,${0.05 * lightboxT})`);
+          grd.addColorStop(1, 'rgba(0,0,0,0)');
+          drawingContext.fillStyle = grd;
+          drawingContext.fillRect(rightEdge, py, shadowW, sz);
+        }
       }
 
       // Now draw the overlay image clipped to the bars (bars animate in from center horizontally)
