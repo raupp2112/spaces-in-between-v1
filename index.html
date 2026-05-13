@@ -243,9 +243,10 @@ function calcLayout() {
   else                          cols = GRID_COLS;
 
   if (windowWidth < 480) {
-    // Scale cells to fill the mobile screen width
+    // Scale cells to fill mobile screen width with side margins
+    const margin = 12; // px on each side
     eGap      = 6;
-    eCellSize = floor((windowWidth - (cols + 1) * eGap) / cols);
+    eCellSize = floor((windowWidth - margin * 2 - (cols + 1) * eGap) / cols);
   } else {
     eCellSize = CELL_SIZE;
     eGap      = GAP;
@@ -254,9 +255,10 @@ function calcLayout() {
   const totalPhotos = GRID_COLS * GRID_ROWS;
   rows = ceil(totalPhotos / cols);
 
-  const gridH = rows * (eCellSize + eGap) + eGap;
-  canvasH     = max(windowHeight, gridH + eGap * 2);
-  gridOffsetY = floor((canvasH - gridH) / 2);
+  const gridH    = rows * (eCellSize + eGap) + eGap;
+  const topPad   = windowWidth < 480 ? 60 : 0; // space below fixed nav on mobile
+  canvasH        = max(windowHeight, gridH + eGap * 2 + topPad);
+  gridOffsetY    = topPad + floor((canvasH - topPad - gridH) / 2);
 }
 
 // ─── DRAW ─────────────────────────────────────────────────────────────────────
