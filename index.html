@@ -406,8 +406,11 @@ function easeOutBack(t) {
 
 function calcLightboxSz() {
   const pad = 40;
-  const maxFraction = windowWidth < 768 ? 0.88 : 0.45;
-  return min(windowWidth - pad * 2, windowHeight - pad * 2, windowWidth * maxFraction);
+  if (windowWidth < 768) {
+    return min(windowWidth - pad * 2, windowHeight - pad * 2, windowWidth * 0.88);
+  }
+  // Desktop: cap at 600px so image never overwhelms the grid
+  return min(windowWidth - pad * 2, windowHeight - pad * 2, windowWidth * 0.38, 600);
 }
 
 // ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
