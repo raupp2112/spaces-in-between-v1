@@ -45,11 +45,118 @@
       border-color: rgba(0, 195, 210, 1);
       color: rgba(0, 195, 210, 1);
     }
+
+    /* ── Intro overlay ── */
+    #intro {
+      position: fixed;
+      inset: 0;
+      z-index: 200;
+      background: rgba(255, 255, 255, 0.96);
+      display: flex;
+      flex-direction: column;
+      align-items: flex-start;
+      justify-content: center;
+      padding-left: calc(50% - 310px);
+      gap: 40px;
+      opacity: 0;
+      pointer-events: none;
+      transition: opacity 0.8s ease;
+    }
+    #intro.visible {
+      opacity: 1;
+      pointer-events: all;
+    }
+    #intro.hidden {
+      opacity: 0;
+      pointer-events: none;
+    }
+    #intro-text {
+      font-family: monospace;
+      font-size: 22px;
+      letter-spacing: 0.06em;
+      color: rgba(0, 0, 0, 0.75);
+      max-width: 620px;
+      text-align: left;
+      line-height: 1.7;
+      min-height: 3em;
+      transition: opacity 0.4s ease;
+    }
+    #intro-text.fade {
+      opacity: 0;
+    }
+    #intro-buttons {
+      display: flex;
+      gap: 8px;
+      width: 620px;
+      max-width: calc(100vw - 96px);
+    }
+    #intro-prev,
+    #intro-next {
+      background: none;
+      border: 1px solid rgba(0, 195, 210, 0.5);
+      color: rgba(0, 195, 210, 0.8);
+      font-family: monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #intro-prev:hover,
+    #intro-next:hover {
+      border-color: rgba(0, 195, 210, 1);
+      color: rgba(0, 195, 210, 1);
+    }
+    #intro-prev.ghosted {
+      opacity: 0.2;
+      cursor: default;
+      pointer-events: none;
+    }
+    #intro-skip {
+      margin-left: auto;
+      background: none;
+      border: 1px solid rgba(0, 195, 210, 0.5);
+      color: rgba(0, 195, 210, 0.8);
+      font-family: monospace;
+      font-size: 10px;
+      letter-spacing: 0.12em;
+      padding: 3px 8px;
+      cursor: pointer;
+      transition: border-color 0.2s, color 0.2s;
+    }
+    #intro-skip:hover {
+      border-color: rgba(0, 195, 210, 1);
+      color: rgba(0, 195, 210, 1);
+    }
+    #intro-dots {
+      display: flex;
+      gap: 6px;
+    }
+    .intro-dot {
+      width: 5px;
+      height: 5px;
+      border: 1px solid rgba(0, 195, 210, 0.5);
+      background: none;
+      transition: background 0.3s;
+    }
+    .intro-dot.active {
+      background: rgba(0, 195, 210, 0.8);
+    }
   </style>
 </head>
 <body>
+<div id="intro">
+  <div id="intro-dots"></div>
+  <div id="intro-text"></div>
+  <div id="intro-buttons">
+    <button id="intro-prev" class="ghosted">&lt;</button>
+    <button id="intro-next">[NEXT]</button>
+    <button id="intro-skip">[SKIP]</button>
+  </div>
+</div>
 <div id="ui">
-  <button onclick="randomizeGrid()">[RANDOMIZE]</button>
+  <button onclick="showIntro()">[HOME]</button>
+  <button onclick="randomizeGrid()">[RANDOMIZE SET]</button>
 </div>
 <script>
 // ─── CONFIGURATION ────────────────────────────────────────────────────────────
@@ -59,7 +166,7 @@ const GRID_COLS   = 13;    // max columns (used at ≥ 1920px)
 const GRID_ROWS   = 13;    // fixed number of rows
 
 // All available images — shuffled so the grid shows a random selection each load
-const ALL_IMAGES = Array.from({ length: 836 }, (_, i) =>
+const ALL_IMAGES = Array.from({ length: 800 }, (_, i) =>
   `images/${String(i + 1).padStart(3, "0")}.jpg`
 );
 let PHOTOS = ALL_IMAGES.slice().sort(() => Math.random() - 0.5).slice(0, GRID_COLS * GRID_ROWS);
@@ -270,10 +377,6 @@ function drawThumb(i) {
   const rot     = lerp(introStartRot[i], 0, easeOutBack(p)); // spin to upright
 
   push();
-  if (t > 0.05) {
-    drawingContext.shadowBlur  = 8 + t * 18;
-    drawingContext.shadowColor = `rgba(0, 195, 210, ${0.25 + t * 0.4})`;
-  }
 
   // Rotate around the thumbnail's centre
   translate(cx + eCellSize / 2, cy + eCellSize / 2);
@@ -338,11 +441,17 @@ function drawLightbox() {
   const py = (height - sz) / 2 + scrollY;
 
   if (imgs[idx] && imgs[idx].width > 1) {
-    drawingContext.shadowBlur  = 40 * lightboxT;
-    drawingContext.shadowColor = `rgba(0,195,210,${0.3 * lightboxT})`;
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 12 * lightboxT;
+    drawingContext.shadowBlur    = 24 * lightboxT;
+    drawingContext.shadowColor   = `rgba(0,0,0,${0.15 * lightboxT})`;
     tint(255, lightboxT * 255);
     image(imgs[idx], px, py, sz, sz);
     noTint();
+    drawingContext.shadowOffsetX = 0;
+    drawingContext.shadowOffsetY = 0;
+    drawingContext.shadowBlur    = 0;
+    drawingContext.shadowColor   = 'rgba(0,0,0,0)';
 
     // Overlay: second image revealed through random vertical bars (clipping mask)
     if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] &&
@@ -378,6 +487,14 @@ function drawLightbox() {
       drawingContext.restore();
     }
 
+    // Single color stripe with OVERLAY blend mode
+    drawingContext.save();
+    drawingContext.globalCompositeOperation = 'lighter';
+    noStroke();
+    fill(lightboxStripe.r, lightboxStripe.g, lightboxStripe.b, 128 * lightboxT);
+    rect(px + lightboxStripe.x, py, lightboxStripe.w, sz);
+    drawingContext.restore();
+
     // Thin cyan frame
     noFill();
     stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], lightboxT * 180);
@@ -386,12 +503,15 @@ function drawLightbox() {
   }
 
   if (lightboxT > 0.8) {
-    fill(100, 100, 100, (lightboxT - 0.8) / 0.2 * 180);
-    textAlign(CENTER, BOTTOM);
-    textSize(13);
+    const fadeA = (lightboxT - 0.8) / 0.2;
+    textFont('monospace');
+    textSize(10);
     textStyle(NORMAL);
     noStroke();
-    text("click anywhere to close", width / 2, py + sz + 28);
+    fill(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], fadeA * 180);
+    textAlign(CENTER, BOTTOM);
+    text("[SPACEBAR TO LOAD RANDOM IMAGE]", width / 2, py - 14);
+    text("[CLICK ANYWHERE TO CLOSE]", width / 2, py + sz + 28);
   }
   pop();
 }
@@ -400,9 +520,59 @@ let lastLightboxIdx    = 0;
 let lightboxOverlayIdx = -1; // second randomly chosen image drawn on top
 let lightboxBars       = []; // vertical bar mask: [{x, w}] offsets from image left edge
 let lightboxBarT       = 0;  // 0→1 bar reveal animation progress
+let lightboxStripe     = { x: 0, w: 0, r: 0, g: 0, b: 0 }; // single color stripe
+
+function sampleImgColor(img) {
+  // Average color from a grid of samples across the image
+  if (!img || img.width < 1) return { r: 128, g: 128, b: 128 };
+  const steps = 16; // 16x16 = 256 samples
+  let r = 0, g = 0, b = 0, count = 0;
+  for (let row = 0; row < steps; row++) {
+    for (let col = 0; col < steps; col++) {
+      const sx = floor((col / (steps - 1)) * (img.width  - 1));
+      const sy = floor((row / (steps - 1)) * (img.height - 1));
+      const c  = img.get(sx, sy);
+      r += c[0]; g += c[1]; b += c[2];
+      count++;
+    }
+  }
+  return { r: floor(r / count), g: floor(g / count), b: floor(b / count) };
+}
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
+function keyPressed() {
+  if (key === ' ' && lightboxIdx >= 0) {
+    // Pick a new random overlay image
+    let oi = floor(random(PHOTOS.length));
+    if (oi === lightboxIdx) oi = (oi + 1) % PHOTOS.length;
+    lightboxOverlayIdx = oi;
+    // Regenerate bars
+    const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
+    lightboxBars = [];
+    const barZoneStart = sz * 0.15;
+    const barZoneEnd   = sz * 0.85;
+    const leftAnchorW  = random(3, 60);
+    const rightAnchorW = random(3, 60);
+    lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
+    lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
+    let bx = barZoneStart + leftAnchorW;
+    while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
+      const gap = random(0, 30);
+      bx += gap;
+      const barW = random(3, 60);
+      if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
+      bx += barW;
+    }
+    const sw = random(50, 100);
+    const sc = sampleImgColor(imgs[lightboxOverlayIdx] || imgs[lightboxIdx]);
+    lightboxStripe = { x: random(barZoneStart, max(barZoneStart, barZoneEnd - sw)), w: min(sw, barZoneEnd - barZoneStart), r: sc.r, g: sc.g, b: sc.b };
+    lightboxBarT = 0;
+    return false; // prevent page scroll
+  }
+}
+
 function mousePressed() {
+  if (document.getElementById('intro').classList.contains('visible')) return;
   if (lightboxIdx >= 0) {
     lastLightboxIdx = lightboxIdx;
     lightboxIdx = -1;
@@ -439,6 +609,9 @@ function mousePressed() {
         if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
         bx += barW;
       }
+      const sw = random(50, 100);
+      const sc = sampleImgColor(imgs[lightboxOverlayIdx] || imgs[lightboxIdx]);
+    lightboxStripe = { x: random(barZoneStart, max(barZoneStart, barZoneEnd - sw)), w: min(sw, barZoneEnd - barZoneStart), r: sc.r, g: sc.g, b: sc.b };
       lightboxBarT = 0;
       for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
       return;
@@ -551,7 +724,8 @@ class Ripple {
     noFill();
     stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], this.a);
     strokeWeight(map(this.r, 0, this.maxR, 1.5, 0.3));
-    ellipse(this.x, this.y, this.r * 2);
+    rectMode(CENTER);
+    rect(this.x, this.y, this.r * 2, this.r * 2);
     pop();
   }
   dead() { return this.r >= this.maxR; }
@@ -585,6 +759,103 @@ function randomizeGrid() {
     introProgress[i]   = 0;
   }
 }
+
+// ─── INTRO OVERLAY ────────────────────────────────────────────────────────────
+const INTRO_SENTENCES = [
+  "Detroit has 122K vacant lots where homes once stood.",
+  "It has thousands of isolated structures.",
+  "This experience pulls from thousands of photos of these spaces…",
+  "focusing not on the structures, but the spaces in between."
+];
+
+(function initIntro() {
+  const overlay  = document.getElementById('intro');
+  const textEl   = document.getElementById('intro-text');
+  const nextBtn  = document.getElementById('intro-next');
+  const prevBtn  = document.getElementById('intro-prev');
+  const skipBtn  = document.getElementById('intro-skip');
+  const dotsEl   = document.getElementById('intro-dots');
+  let current    = 0;
+
+  // Build dots
+  INTRO_SENTENCES.forEach((_, i) => {
+    const d = document.createElement('div');
+    d.className = 'intro-dot' + (i === 0 ? ' active' : '');
+    dotsEl.appendChild(d);
+  });
+
+  function updateDots() {
+    dotsEl.querySelectorAll('.intro-dot').forEach((d, i) => {
+      d.classList.toggle('active', i === current);
+    });
+  }
+
+  function updateButtons() {
+    prevBtn.classList.toggle('ghosted', current === 0);
+    nextBtn.textContent = current < INTRO_SENTENCES.length - 1 ? '[NEXT]' : '[ENTER]';
+  }
+
+  function showSentence(idx) {
+    textEl.classList.add('fade');
+    setTimeout(() => {
+      textEl.textContent = INTRO_SENTENCES[idx];
+      updateDots();
+      updateButtons();
+      textEl.classList.remove('fade');
+    }, 400);
+  }
+
+  // Wait for most images to load, then fade in the overlay after a short pause
+  function checkImgsLoaded() {
+    const loaded = imgs.filter(img => img && img.width > 1).length;
+    const threshold = Math.floor(imgs.length * 0.8);
+    if (loaded >= threshold) {
+      setTimeout(() => overlay.classList.add('visible'), 600);
+    } else {
+      setTimeout(checkImgsLoaded, 150);
+    }
+  }
+  // imgs array is populated after setup(), so wait a tick before polling
+  setTimeout(checkImgsLoaded, 200);
+
+  // Show first sentence immediately (overlay is invisible until triggered)
+  textEl.textContent = INTRO_SENTENCES[0];
+  updateButtons();
+
+  window.showIntro = function() {
+    current = 0;
+    textEl.textContent = INTRO_SENTENCES[0];
+    updateDots();
+    updateButtons();
+    overlay.classList.remove('hidden');
+    overlay.classList.add('visible');
+  };
+
+  prevBtn.addEventListener('click', () => {
+    if (current > 0) {
+      current--;
+      showSentence(current);
+    }
+  });
+
+  function dismissIntro() {
+    overlay.classList.add('hidden');
+    overlay.classList.remove('visible');
+  }
+
+  nextBtn.addEventListener('click', () => {
+    if (current < INTRO_SENTENCES.length - 1) {
+      current++;
+      showSentence(current);
+    } else {
+      dismissIntro();
+    }
+  });
+
+  skipBtn.addEventListener('click', () => {
+    dismissIntro();
+  });
+})();
 </script>
 <!-- live reload — remove in production -->
 <script>
