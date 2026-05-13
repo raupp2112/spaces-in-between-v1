@@ -347,13 +347,13 @@ function drawLightbox() {
         imgs[lightboxOverlayIdx].width > 1 && lightboxBars.length > 0) {
       drawingContext.shadowBlur = 0;
       // Draw gradient drop shadows on the main image before bars are placed on top
-      const shadowW = 22;
+      const shadowW = 10;
       for (const bar of lightboxBars) {
         const grd = drawingContext.createLinearGradient(
           px + bar.x + bar.w, 0,
           px + bar.x + bar.w + shadowW, 0
         );
-        grd.addColorStop(0, `rgba(0,0,0,${0.75 * lightboxT})`);
+        grd.addColorStop(0, `rgba(0,0,0,${0.2 * lightboxT})`);
         grd.addColorStop(1, 'rgba(0,0,0,0)');
         drawingContext.fillStyle = grd;
         drawingContext.fillRect(px + bar.x + bar.w, py, shadowW, sz);
