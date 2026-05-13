@@ -318,6 +318,8 @@ function easeOutBack(t) {
 function drawLightbox() {
   const target = lightboxIdx >= 0 ? 1 : 0;
   lightboxT = lerp(lightboxT, target, 0.14);
+  if (lightboxIdx >= 0) lightboxBarT = min(1, lightboxBarT + 0.09);
+  else lightboxBarT = 0;
   if (lightboxT < 0.02) return;
 
   const idx = lightboxIdx >= 0 ? lightboxIdx : lastLightboxIdx;
@@ -346,24 +348,28 @@ function drawLightbox() {
     if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] &&
         imgs[lightboxOverlayIdx].width > 1 && lightboxBars.length > 0) {
       drawingContext.shadowBlur = 0;
-      // Draw gradient drop shadows on the main image before bars are placed on top
-      const shadowW = 10;
+      // Draw gradient drop shadows in sync with bar reveal animation
+      const shadowBarEase = easeInOutCubic(lightboxBarT);
+      const shadowW = 4;
       for (const bar of lightboxBars) {
-        const grd = drawingContext.createLinearGradient(
-          px + bar.x + bar.w, 0,
-          px + bar.x + bar.w + shadowW, 0
-        );
-        grd.addColorStop(0, `rgba(0,0,0,${0.2 * lightboxT})`);
+        const cx = px + bar.x + bar.w * 0.5;
+        const halfW = bar.w * 0.5 * shadowBarEase;
+        const rightEdge = cx + halfW;
+        const grd = drawingContext.createLinearGradient(rightEdge, 0, rightEdge + shadowW, 0);
+        grd.addColorStop(0, `rgba(0,0,0,${0.05 * lightboxT})`);
         grd.addColorStop(1, 'rgba(0,0,0,0)');
         drawingContext.fillStyle = grd;
-        drawingContext.fillRect(px + bar.x + bar.w, py, shadowW, sz);
+        drawingContext.fillRect(rightEdge, py, shadowW, sz);
       }
 
-      // Now draw the overlay image clipped to the bars (no canvas shadow needed)
+      // Now draw the overlay image clipped to the bars (bars animate in from center horizontally)
+      const barEase = easeInOutCubic(lightboxBarT);
       drawingContext.save();
       drawingContext.beginPath();
       for (const bar of lightboxBars) {
-        drawingContext.rect(px + bar.x, py, bar.w, sz);
+        const cx = px + bar.x + bar.w * 0.5;
+        const halfW = bar.w * 0.5 * barEase;
+        drawingContext.rect(cx - halfW, py, halfW * 2, sz);
       }
       drawingContext.clip();
       tint(255, lightboxT * 255);
@@ -393,6 +399,7 @@ function drawLightbox() {
 let lastLightboxIdx    = 0;
 let lightboxOverlayIdx = -1; // second randomly chosen image drawn on top
 let lightboxBars       = []; // vertical bar mask: [{x, w}] offsets from image left edge
+let lightboxBarT       = 0;  // 0→1 bar reveal animation progress
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 function mousePressed() {
@@ -418,14 +425,21 @@ function mousePressed() {
       lightboxBars = [];
       const barZoneStart = sz * 0.15;  // leave 15% clear on the left
       const barZoneEnd   = sz * 0.85;  // leave 15% clear on the right
-      let bx = barZoneStart;
-      while (bx < barZoneEnd && lightboxBars.length < 8) {
+      // Always anchor one bar at each threshold edge
+      const leftAnchorW  = random(3, 60);
+      const rightAnchorW = random(3, 60);
+      lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
+      lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
+      // Fill in random bars in between
+      let bx = barZoneStart + leftAnchorW;
+      while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
         const gap = random(0, 30);
         bx += gap;
         const barW = random(3, 60);
-        if (bx < barZoneEnd) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - bx) });
+        if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
         bx += barW;
       }
+      lightboxBarT = 0;
       for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
       return;
     }
