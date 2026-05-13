@@ -525,11 +525,13 @@ function drawLightbox() {
     textFont('Inconsolata');
     textSize(12);
     textStyle(NORMAL);
+    drawingContext.letterSpacing = '0.12em';
     noStroke();
     fill(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], fadeA * 180);
     textAlign(CENTER, BOTTOM);
     text("[SPACEBAR TO LOAD RANDOM IMAGE]", width / 2, py - 14);
     text("[CLICK ANYWHERE TO CLOSE]", width / 2, py + sz + 28);
+    drawingContext.letterSpacing = '0px';
   }
   pop();
 }
