@@ -7,8 +7,19 @@
   <script src="https://cdnjs.cloudflare.com/ajax/libs/p5.js/1.9.4/p5.min.js"></script>
   <style>
     * { margin: 0; padding: 0; box-sizing: border-box; }
-    body { background: #fff; overflow-x: hidden; overflow-y: auto; }
-    canvas { display: block; }
+    body { background: #fff; overflow-x: hidden; overflow-y: auto; position: relative; }
+    canvas { display: block; position: relative; z-index: 1; }
+
+    /* Detroit map — sits behind canvas, scrolls with page content */
+    body::before {
+      content: '';
+      position: absolute;
+      inset: 0;
+      background: url('images/detroit-map.svg') no-repeat center top / cover;
+      opacity: 0.25;
+      pointer-events: none;
+      z-index: 0;
+    }
 
     #ui {
       position: fixed;
@@ -131,7 +142,7 @@ function calcLayout() {
 
 // ─── DRAW ─────────────────────────────────────────────────────────────────────
 function draw() {
-  background(255);
+  clear(); // transparent canvas — map shows through gaps between photos
 
   // Advance intro animation
   const n = GRID_COLS * GRID_ROWS;
