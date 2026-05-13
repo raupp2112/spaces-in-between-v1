@@ -30,6 +30,14 @@
       align-items: center;
       gap: 8px;
     }
+    @media (max-width: 479px) {
+      #ui {
+        position: fixed;
+        top: 12px;
+        left: 12px;
+        transform: none !important;
+      }
+    }
     #ui button {
       pointer-events: all;
       background: rgba(255, 255, 255, 0.6);
@@ -239,22 +247,24 @@ function setup() {
 }
 
 function calcLayout() {
-  // Reflow columns based on breakpoints — thumbnails stay full size
   if      (windowWidth <  480)  cols = 4;
   else if (windowWidth <  768)  cols = 7;
   else if (windowWidth < 1024)  cols = 10;
-  else                          cols = GRID_COLS; // 13
+  else                          cols = GRID_COLS;
 
-  // Always use full-size cells — no shrinking
-  eCellSize = CELL_SIZE;
-  eGap      = GAP;
+  if (windowWidth < 480) {
+    // Scale cells to fill the mobile screen width
+    eGap      = 6;
+    eCellSize = floor((windowWidth - (cols + 1) * eGap) / cols);
+  } else {
+    eCellSize = CELL_SIZE;
+    eGap      = GAP;
+  }
 
   const totalPhotos = GRID_COLS * GRID_ROWS;
   rows = ceil(totalPhotos / cols);
 
   const gridH = rows * (eCellSize + eGap) + eGap;
-
-  // Center vertically only when grid fits in the window
   canvasH     = max(windowHeight, gridH + eGap * 2);
   gridOffsetY = floor((canvasH - gridH) / 2);
 }
@@ -599,16 +609,25 @@ function mousePressed() {
   handlePress(mouseX, mouseY);
 }
 
+let _tapStartX = 0, _tapStartY = 0;
+
 function touchStarted() {
-  // If intro overlay is up, let touch events pass through to HTML buttons
-  if (document.getElementById('intro').classList.contains('visible')) return true;
-  // Use touch coordinates directly — more reliable than mouseX/mouseY on mobile
   if (touches.length > 0) {
-    const tx = touches[0].x;
-    const ty = touches[0].y;
-    handlePress(tx, ty);
+    _tapStartX = touches[0].x;
+    _tapStartY = touches[0].y;
   }
-  return false; // prevent scroll/zoom interference on canvas
+  return true; // allow default scroll behavior
+}
+
+function touchEnded() {
+  if (document.getElementById('intro').classList.contains('visible')) return true;
+  // Only treat as a tap if the finger barely moved
+  const dx = touchX - _tapStartX;
+  const dy = touchY - _tapStartY;
+  if (sqrt(dx * dx + dy * dy) < 12) {
+    handlePress(_tapStartX, _tapStartY);
+  }
+  return true;
 }
 
 function windowResized() {
