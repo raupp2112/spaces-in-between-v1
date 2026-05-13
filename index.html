@@ -403,10 +403,10 @@ function mousePressed() {
       const sz = min(windowWidth - 160, windowHeight - 160, windowWidth * 0.45);
       lightboxBars = [];
       let bx = 0;
-      while (bx < sz && lightboxBars.length < 20) {
+      while (bx < sz && lightboxBars.length < 8) {
         const gap = random(0, 30);   // random gap before this bar
         bx += gap;
-        const barW = random(3, 40);  // bar width 3–40px
+        const barW = random(3, 60);  // bar width 3–60px
         if (bx < sz) lightboxBars.push({ x: bx, w: min(barW, sz - bx) });
         bx += barW;
       }
