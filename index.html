@@ -346,17 +346,26 @@ function drawLightbox() {
     if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] &&
         imgs[lightboxOverlayIdx].width > 1 && lightboxBars.length > 0) {
       drawingContext.shadowBlur = 0;
+      // Draw gradient drop shadows on the main image before bars are placed on top
+      const shadowW = 22;
+      for (const bar of lightboxBars) {
+        const grd = drawingContext.createLinearGradient(
+          px + bar.x + bar.w, 0,
+          px + bar.x + bar.w + shadowW, 0
+        );
+        grd.addColorStop(0, `rgba(0,0,0,${0.75 * lightboxT})`);
+        grd.addColorStop(1, 'rgba(0,0,0,0)');
+        drawingContext.fillStyle = grd;
+        drawingContext.fillRect(px + bar.x + bar.w, py, shadowW, sz);
+      }
+
+      // Now draw the overlay image clipped to the bars (no canvas shadow needed)
       drawingContext.save();
       drawingContext.beginPath();
       for (const bar of lightboxBars) {
         drawingContext.rect(px + bar.x, py, bar.w, sz);
       }
       drawingContext.clip();
-      // Drop shadow at bar edges
-      drawingContext.shadowColor   = 'rgba(0,0,0,0.92)';
-      drawingContext.shadowBlur    = 14;
-      drawingContext.shadowOffsetX = 7;
-      drawingContext.shadowOffsetY = 7;
       tint(255, lightboxT * 255);
       image(imgs[lightboxOverlayIdx], px, py, sz, sz);
       noTint();
