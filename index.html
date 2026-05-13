@@ -15,8 +15,8 @@
       content: '';
       position: absolute;
       inset: 0;
-      background: url('images/detroit-map.svg') no-repeat center top / cover;
-      opacity: 0.25;
+      background: url('images/detroit-map.jpg') no-repeat center top / cover;
+      opacity: 0.6;
       pointer-events: none;
       z-index: 0;
     }
@@ -103,6 +103,9 @@ function setup() {
   const totalPlus = (GRID_COLS + 1) * (GRID_ROWS + 1);
   for (let i = 0; i < totalPlus; i++) plusRotT[i] = 0;
 
+  // Floating stripes
+  initStripes();
+
   // Shuffle pop-in: random order, each thumbnail pops in place
   const order = shuffle(Array.from({ length: totalCells }, (_, i) => i));
   introStartFrame = new Array(totalCells);
@@ -169,6 +172,9 @@ function draw() {
 
   // Draw photos
   for (let i = 0; i < n; i++) drawThumb(i);
+
+  // Floating stripes
+  for (const s of stripes) { s.update(); s.draw(); }
 
   // Ripples
   for (let i = ripples.length - 1; i >= 0; i--) {
@@ -362,6 +368,7 @@ function mousePressed() {
 function windowResized() {
   calcLayout();
   resizeCanvas(windowWidth, canvasH);
+  initStripes();
 }
 
 // ─── HELPERS ──────────────────────────────────────────────────────────────────
@@ -382,6 +389,51 @@ function generatePlaceholders(n) {
   return Array.from({ length: n }, (_, i) =>
     `https://picsum.photos/seed/${i * 7 + 11}/200/200`
   );
+}
+
+// ─── STRIPES ──────────────────────────────────────────────────────────────────
+const STRIPE_COUNT = 40;
+let stripes = [];
+
+class Stripe {
+  constructor(spawnAnywhere = false) {
+    this.init(spawnAnywhere);
+  }
+
+  init(spawnAnywhere = false) {
+    this.w     = random(1, 100);
+    this.h     = CELL_SIZE;
+    // Snap y to a random grid row so stripes align with thumbnails
+    const row  = floor(random(rows));
+    this.y     = gridOffsetY + eGap + row * (eCellSize + eGap);
+    this.speed = random(0.4, 2.2) * (random() < 0.5 ? 1 : -1);
+    // Start off the correct edge, or anywhere on first load
+    this.x     = spawnAnywhere
+      ? random(-this.w, windowWidth)
+      : (this.speed > 0 ? -this.w : windowWidth);
+    this.r     = random(255);
+    this.g     = random(255);
+    this.b     = random(255);
+    this.alpha = random(30, 110);
+  }
+
+  update() {
+    this.x += this.speed;
+    if (this.x > windowWidth + 120 || this.x < -120) this.init();
+  }
+
+  draw() {
+    push();
+    noStroke();
+    fill(this.r, this.g, this.b, this.alpha);
+    rect(this.x, this.y, this.w, this.h);
+    pop();
+  }
+}
+
+function initStripes() {
+  stripes = [];
+  for (let i = 0; i < STRIPE_COUNT; i++) stripes.push(new Stripe(true));
 }
 
 // ─── RIPPLE ───────────────────────────────────────────────────────────────────
