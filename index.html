@@ -419,7 +419,8 @@ function easeOutBack(t) {
 
 function calcLightboxSz() {
   const pad = 40;
-  return min(windowWidth - pad * 2, windowHeight - pad * 2, windowWidth * 0.9);
+  const maxFraction = windowWidth < 768 ? 0.88 : 0.45;
+  return min(windowWidth - pad * 2, windowHeight - pad * 2, windowWidth * maxFraction);
 }
 
 // ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
