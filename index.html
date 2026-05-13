@@ -84,6 +84,11 @@ let introStartX     = []; // random scatter origin X
 let introStartY     = []; // random scatter origin Y
 let introStartRot   = []; // random starting rotation (radians)
 let plusRotT        = []; // 0‒1 hover lerp per plus sign
+let plusSpinProg    = []; // 0‒1 progress through the 2-turn spin animation
+let plusSpinStart   = []; // frame each plus begins spinning
+const PLUS_SPIN_DUR     = 50;  // frames per plus to complete 2 turns
+const PLUS_SPIN_STAGGER = 0.8; // frames between each diagonal step
+
 const INTRO_STAGGER  = 0.2; // frames of random jitter between launches
 const INTRO_DURATION = 6;   // frames each individual pop takes
 
@@ -99,7 +104,11 @@ function setup() {
   for (let i = 0; i < totalCells; i++) imgs[i] = loadImage(PHOTOS[i]);
   for (let i = 0; i < totalCells; i++) hoverT[i] = 0;
   const totalPlus = (GRID_COLS + 1) * (GRID_ROWS + 1);
-  for (let i = 0; i < totalPlus; i++) plusRotT[i] = 0;
+  for (let i = 0; i < totalPlus; i++) {
+    plusRotT[i]     = 0;
+    plusSpinProg[i] = 1; // 1 = done, so no spin plays on first load
+    plusSpinStart[i] = 0;
+  }
 
   // Floating stripes
   initStripes();
@@ -220,7 +229,12 @@ function drawMarkers() {
       const my  = gridOffsetY + eGap + row * (eCellSize + eGap) - eGap / 2;
       const idx = row * (GRID_COLS + 1) + col;
       plusRotT[idx] = lerp(plusRotT[idx], plusTarget[idx], 0.14);
-      plusSign(mx, my, plusRotT[idx] * PI / 2);
+      // Advance spin animation
+      if (plusSpinProg[idx] < 1 && frameCount >= plusSpinStart[idx]) {
+        plusSpinProg[idx] = min(1, (frameCount - plusSpinStart[idx]) / PLUS_SPIN_DUR);
+      }
+      const spinAngle = easeInOutCubic(plusSpinProg[idx]) * TWO_PI * 2; // 2 full turns
+      plusSign(mx, my, plusRotT[idx] * PI / 2 + spinAngle);
     }
   }
   pop();
@@ -284,6 +298,12 @@ function drawThumb(i) {
     rect(cx - ox, cy - oy, eCellSize * sc, eCellSize * sc);
   }
   pop();
+}
+
+// Smooth acceleration + deceleration
+function easeInOutCubic(t) {
+  if (t <= 0) return 0; if (t >= 1) return 1;
+  return t < 0.5 ? 4 * t * t * t : 1 - pow(-2 * t + 2, 3) / 2;
 }
 
 // Overshoot spring: shoots past 1 then snaps back
@@ -474,6 +494,15 @@ class Ripple {
 
 // ─── RANDOMIZE ────────────────────────────────────────────────────────────────
 function randomizeGrid() {
+  // Spin all plus signs — diagonal wave from top-left to bottom-right
+  for (let row = 0; row <= GRID_ROWS; row++) {
+    for (let col = 0; col <= GRID_COLS; col++) {
+      const idx = row * (GRID_COLS + 1) + col;
+      plusSpinStart[idx] = frameCount + (col + row) * PLUS_SPIN_STAGGER;
+      plusSpinProg[idx]  = 0;
+    }
+  }
+
   PHOTOS = ALL_IMAGES.slice().sort(() => Math.random() - 0.5).slice(0, GRID_COLS * GRID_ROWS);
   const totalCells = GRID_COLS * GRID_ROWS;
 
