@@ -342,12 +342,14 @@ function drawLightbox() {
     image(imgs[idx], px, py, sz, sz);
     noTint();
 
-    // Overlay: second random image at 50% opacity
+    // Overlay: second random image at 50% opacity with blend mode
     if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] && imgs[lightboxOverlayIdx].width > 1) {
       drawingContext.shadowBlur = 0;
+      drawingContext.globalCompositeOperation = 'overlay';
       tint(255, lightboxT * 128); // 50% × fade-in
       image(imgs[lightboxOverlayIdx], px, py, sz, sz);
       noTint();
+      drawingContext.globalCompositeOperation = 'source-over'; // restore default
     }
 
     // Thin cyan frame
