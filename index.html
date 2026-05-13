@@ -335,12 +335,21 @@ function drawLightbox() {
   const px = (width  - sz) / 2;
   const py = (height - sz) / 2 + scrollY;
 
-  if (imgs[idx] && imgs[idx].width > 0) {
+  if (imgs[idx] && imgs[idx].width > 1) {
     drawingContext.shadowBlur  = 40 * lightboxT;
     drawingContext.shadowColor = `rgba(0,195,210,${0.3 * lightboxT})`;
     tint(255, lightboxT * 255);
     image(imgs[idx], px, py, sz, sz);
     noTint();
+
+    // Overlay: second random image at 50% opacity
+    if (lightboxOverlayIdx >= 0 && imgs[lightboxOverlayIdx] && imgs[lightboxOverlayIdx].width > 1) {
+      drawingContext.shadowBlur = 0;
+      tint(255, lightboxT * 128); // 50% × fade-in
+      image(imgs[lightboxOverlayIdx], px, py, sz, sz);
+      noTint();
+    }
+
     // Thin cyan frame
     noFill();
     stroke(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], lightboxT * 180);
@@ -359,7 +368,8 @@ function drawLightbox() {
   pop();
 }
 
-let lastLightboxIdx = 0;
+let lastLightboxIdx    = 0;
+let lightboxOverlayIdx = -1; // second randomly chosen image drawn at 50% on top
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 function mousePressed() {
@@ -375,6 +385,10 @@ function mousePressed() {
         mouseY > y && mouseY < y + eCellSize) {
       lightboxIdx = i;
       lastLightboxIdx = i;
+      // Pick a different random image for the overlay
+      let oi = floor(random(PHOTOS.length));
+      if (oi === i) oi = (oi + 1) % PHOTOS.length;
+      lightboxOverlayIdx = oi;
       for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
       return;
     }
