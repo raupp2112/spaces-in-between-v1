@@ -543,7 +543,7 @@ function keyPressed() {
   }
 }
 
-function mousePressed() {
+function handlePress(px, py) {
   if (document.getElementById('intro').classList.contains('visible')) return;
   if (lightboxIdx >= 0) {
     lastLightboxIdx = lightboxIdx;
@@ -553,8 +553,8 @@ function mousePressed() {
 
   for (let i = 0; i < PHOTOS.length; i++) {
     const { x, y } = cellPos(i);
-    if (mouseX > x && mouseX < x + eCellSize &&
-        mouseY > y && mouseY < y + eCellSize) {
+    if (px > x && px < x + eCellSize &&
+        py > y && py < y + eCellSize) {
       lightboxIdx = i;
       lastLightboxIdx = i;
       // Pick a different random image for the overlay
@@ -565,14 +565,12 @@ function mousePressed() {
       // Build random vertical bar mask for the overlay
       const sz = min(windowWidth - 40, windowHeight - 120, windowWidth * 0.9);
       lightboxBars = [];
-      const barZoneStart = sz * 0.15;  // leave 15% clear on the left
-      const barZoneEnd   = sz * 0.85;  // leave 15% clear on the right
-      // Always anchor one bar at each threshold edge
+      const barZoneStart = sz * 0.15;
+      const barZoneEnd   = sz * 0.85;
       const leftAnchorW  = random(3, 60);
       const rightAnchorW = random(3, 60);
       lightboxBars.push({ x: barZoneStart, w: leftAnchorW });
       lightboxBars.push({ x: barZoneEnd - rightAnchorW, w: rightAnchorW });
-      // Fill in random bars in between
       let bx = barZoneStart + leftAnchorW;
       while (bx < barZoneEnd - rightAnchorW && lightboxBars.length < 10) {
         const gap = random(0, 30);
@@ -581,23 +579,29 @@ function mousePressed() {
         if (bx < barZoneEnd - rightAnchorW) lightboxBars.push({ x: bx, w: min(barW, barZoneEnd - rightAnchorW - bx) });
         bx += barW;
       }
-      const sw = random(50, 100);
-      const sc = sampleImgBandColors(imgs[lightboxIdx], 5);
-    lightboxStripe = { x: random(barZoneStart, max(barZoneStart, barZoneEnd - sw)), w: min(sw, barZoneEnd - barZoneStart), colors: sc };
       lightboxBarT = 0;
-      for (let k = 0; k < 4; k++) ripples.push(new Ripple(mouseX, mouseY));
+      for (let k = 0; k < 4; k++) ripples.push(new Ripple(px, py));
       return;
     }
   }
 
   // Click on empty space → ripple
-  for (let k = 0; k < 3; k++) ripples.push(new Ripple(mouseX, mouseY));
+  for (let k = 0; k < 3; k++) ripples.push(new Ripple(px, py));
+}
+
+function mousePressed() {
+  handlePress(mouseX, mouseY);
 }
 
 function touchStarted() {
   // If intro overlay is up, let touch events pass through to HTML buttons
   if (document.getElementById('intro').classList.contains('visible')) return true;
-  mousePressed();
+  // Use touch coordinates directly — more reliable than mouseX/mouseY on mobile
+  if (touches.length > 0) {
+    const tx = touches[0].x;
+    const ty = touches[0].y;
+    handlePress(tx, ty);
+  }
   return false; // prevent scroll/zoom interference on canvas
 }
 
