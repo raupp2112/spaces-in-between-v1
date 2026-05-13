@@ -353,10 +353,10 @@ function drawLightbox() {
       }
       drawingContext.clip();
       // Drop shadow at bar edges
-      drawingContext.shadowColor   = 'rgba(0,0,0,0.55)';
-      drawingContext.shadowBlur    = 8;
-      drawingContext.shadowOffsetX = 4;
-      drawingContext.shadowOffsetY = 4;
+      drawingContext.shadowColor   = 'rgba(0,0,0,0.92)';
+      drawingContext.shadowBlur    = 14;
+      drawingContext.shadowOffsetX = 7;
+      drawingContext.shadowOffsetY = 7;
       tint(255, lightboxT * 255);
       image(imgs[lightboxOverlayIdx], px, py, sz, sz);
       noTint();
