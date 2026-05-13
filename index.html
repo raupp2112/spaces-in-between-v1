@@ -417,6 +417,11 @@ function easeOutBack(t) {
   return map(t, 0.6, 1.0, 1.25, 1.0);
 }
 
+function calcLightboxSz() {
+  const pad = 40;
+  return min(windowWidth - pad * 2, windowHeight - pad * 2, windowWidth * 0.9);
+}
+
 // ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
 function drawLightbox() {
   const target = lightboxIdx >= 0 ? 1 : 0;
@@ -432,10 +437,7 @@ function drawLightbox() {
   noStroke();
   rect(0, scrollY, windowWidth, windowHeight);
 
-  const pad  = 40;
-  const maxW = windowWidth  - pad * 2;
-  const maxH = windowHeight - pad * 2;
-  const sz = min(maxW, maxH, windowWidth * 0.9);
+  const sz = lightboxSz;
   const px = (windowWidth  - sz) / 2;
   const py = scrollY + (windowHeight - sz) / 2;
 
@@ -512,6 +514,7 @@ let lastLightboxIdx    = 0;
 let lightboxOverlayIdx = -1; // second randomly chosen image drawn on top
 let lightboxBars       = []; // vertical bar mask: [{x, w}] offsets from image left edge
 let lightboxBarT       = 0;  // 0→1 bar reveal animation progress
+let lightboxSz         = 400; // computed size — shared between generation and drawing
 
 // ─── INPUT ────────────────────────────────────────────────────────────────────
 function keyPressed() {
@@ -521,7 +524,8 @@ function keyPressed() {
     if (oi === lightboxIdx) oi = (oi + 1) % PHOTOS.length;
     lightboxOverlayIdx = oi;
     // Regenerate bars
-    const sz = min(windowWidth - 40, windowHeight - 120, windowWidth * 0.9);
+    lightboxSz = calcLightboxSz();
+    const sz = lightboxSz;
     lightboxBars = [];
     const barZoneStart = sz * 0.15;
     const barZoneEnd   = sz * 0.85;
@@ -562,7 +566,8 @@ function handlePress(px, py) {
       lightboxOverlayIdx = oi;
 
       // Build random vertical bar mask for the overlay
-      const sz = min(windowWidth - 40, windowHeight - 120, windowWidth * 0.9);
+      lightboxSz = calcLightboxSz();
+      const sz = lightboxSz;
       lightboxBars = [];
       const barZoneStart = sz * 0.15;
       const barZoneEnd   = sz * 0.85;
