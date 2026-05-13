@@ -437,7 +437,8 @@ function calcLightboxSz() {
 // ─── LIGHTBOX ─────────────────────────────────────────────────────────────────
 function drawLightbox() {
   const target = lightboxIdx >= 0 ? 1 : 0;
-  lightboxT = lerp(lightboxT, target, 0.14);
+  const lerpSpeed = windowWidth < 480 ? 0.22 : 0.14;
+  lightboxT = lerp(lightboxT, target, lerpSpeed);
   if (lightboxIdx >= 0) lightboxBarT = min(1, lightboxBarT + 0.09);
   else lightboxBarT = 0;
   if (lightboxT < 0.02) return;
@@ -454,10 +455,12 @@ function drawLightbox() {
   const py = scrollY + (windowHeight - sz) / 2;
 
   if (imgs[idx] && imgs[idx].width > 1) {
-    drawingContext.shadowOffsetX = 0;
-    drawingContext.shadowOffsetY = 12 * lightboxT;
-    drawingContext.shadowBlur    = 24 * lightboxT;
-    drawingContext.shadowColor   = `rgba(0,0,0,${0.15 * lightboxT})`;
+    if (windowWidth >= 480) {
+      drawingContext.shadowOffsetX = 0;
+      drawingContext.shadowOffsetY = 12 * lightboxT;
+      drawingContext.shadowBlur    = 24 * lightboxT;
+      drawingContext.shadowColor   = `rgba(0,0,0,${0.15 * lightboxT})`;
+    }
     tint(255, lightboxT * 255);
     image(imgs[idx], px, py, sz, sz);
     noTint();
@@ -676,7 +679,7 @@ function generatePlaceholders(n) {
 }
 
 // ─── STRIPES ──────────────────────────────────────────────────────────────────
-const STRIPE_COUNT = 120;
+const STRIPE_COUNT = windowWidth < 480 ? 40 : 120;
 let stripes = [];
 
 class Stripe {
