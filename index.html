@@ -44,11 +44,17 @@
       border: 1px solid rgba(0, 195, 210, 0.5);
       color: rgba(0, 195, 210, 0.8);
       font-family: 'Inconsolata', monospace;
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.12em;
-      padding: 3px 8px;
+      padding: 4px 10px;
       cursor: pointer;
       transition: border-color 0.2s, color 0.2s;
+    }
+    @media (max-width: 479px) {
+      #ui button {
+        font-size: 14px;
+        padding: 6px 14px;
+      }
     }
     #ui button:hover {
       border-color: rgba(0, 195, 210, 1);
@@ -105,11 +111,17 @@
       border: 1px solid rgba(0, 195, 210, 0.5);
       color: rgba(0, 195, 210, 0.8);
       font-family: 'Inconsolata', monospace;
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.12em;
-      padding: 3px 8px;
+      padding: 4px 10px;
       cursor: pointer;
       transition: border-color 0.2s, color 0.2s;
+    }
+    @media (max-width: 479px) {
+      #intro-prev, #intro-next {
+        font-size: 14px;
+        padding: 6px 14px;
+      }
     }
     #intro-prev:hover,
     #intro-next:hover {
@@ -127,11 +139,17 @@
       border: 1px solid rgba(0, 195, 210, 0.5);
       color: rgba(0, 195, 210, 0.8);
       font-family: 'Inconsolata', monospace;
-      font-size: 10px;
+      font-size: 12px;
       letter-spacing: 0.12em;
-      padding: 3px 8px;
+      padding: 4px 10px;
       cursor: pointer;
       transition: border-color 0.2s, color 0.2s;
+    }
+    @media (max-width: 479px) {
+      #intro-skip {
+        font-size: 14px;
+        padding: 6px 14px;
+      }
     }
     #intro-skip:hover {
       border-color: rgba(0, 195, 210, 1);
@@ -498,8 +516,8 @@ function drawLightbox() {
   if (lightboxT > 0.8) {
     const fadeA = (lightboxT - 0.8) / 0.2;
     textFont('Inconsolata');
-    textSize(10);
-    textStyle(NORMAL);
+    textSize(13);
+    textStyle(BOLD);
     noStroke();
     fill(MARKER_COL[0], MARKER_COL[1], MARKER_COL[2], fadeA * 180);
     textAlign(CENTER, BOTTOM);
