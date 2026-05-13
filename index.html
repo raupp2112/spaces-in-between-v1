@@ -392,7 +392,7 @@ function generatePlaceholders(n) {
 }
 
 // ─── STRIPES ──────────────────────────────────────────────────────────────────
-const STRIPE_COUNT = 40;
+const STRIPE_COUNT = 120;
 let stripes = [];
 
 class Stripe {
@@ -401,12 +401,12 @@ class Stripe {
   }
 
   init(spawnAnywhere = false) {
-    this.w     = random(1, 100);
+    this.w     = random(1, CELL_SIZE);
     this.h     = CELL_SIZE;
     // Snap y to a random grid row so stripes align with thumbnails
     const row  = floor(random(rows));
     this.y     = gridOffsetY + eGap + row * (eCellSize + eGap);
-    this.speed = random(0.4, 2.2) * (random() < 0.5 ? 1 : -1);
+    this.speed = random(0.1, 0.6) * (random() < 0.5 ? 1 : -1);
     // Start off the correct edge, or anywhere on first load
     this.x     = spawnAnywhere
       ? random(-this.w, windowWidth)
