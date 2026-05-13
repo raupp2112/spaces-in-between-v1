@@ -375,7 +375,7 @@ function positionUI() {
   const totalW  = cols * (eCellSize + eGap);
   const offsetX = floor((windowWidth - totalW) / 2) + eGap;
   // Centre vertically in the gap row above the first thumbnail row
-  const offsetY = gridOffsetY + floor(eGap / 2);
+  const offsetY = gridOffsetY + floor(eGap / 2) - 24;
   const ui = document.getElementById('ui');
   ui.style.left      = offsetX + 'px';
   ui.style.top       = offsetY + 'px';
